@@ -168,6 +168,32 @@ function formatStats(stats) {
   return lines.join("\n");
 }
 
+function formatDailyReminder(activeSession) {
+  if (activeSession) {
+    const questionIds = JSON.parse(activeSession.question_ids || "[]");
+    const remaining = questionIds.length - activeSession.current_index;
+    return [
+      DIVIDER,
+      "🌆 Вечерний привет!",
+      "",
+      `У тебя есть незавершённая сессия обучения — осталось ${remaining} вопросов.`,
+      "Продолжим? Просто отправь /learn 👇",
+      DIVIDER,
+    ].join("\n");
+  }
+
+  return [
+    DIVIDER,
+    "🌆 Вечерний привет!",
+    "",
+    "Вечер — отличное время повторить немецкий. 🇩🇪",
+    "• /learn — начать обучение",
+    "• /review — повторить сложные вопросы",
+    "• /test — проверить себя",
+    DIVIDER,
+  ].join("\n");
+}
+
 function formatReviewMenu() {
   return [
     DIVIDER,
@@ -204,5 +230,6 @@ module.exports = {
   formatStats,
   formatReviewMenu,
   buildReviewMenuMarkup,
+  formatDailyReminder,
   buildQuestionReplyMarkup,
 };

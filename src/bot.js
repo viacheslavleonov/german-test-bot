@@ -6,6 +6,7 @@ const {
 const { initDb } = require("./db");
 const { registerCommandHandlers } = require("./handlers/commands");
 const { registerMessageHandler } = require("./handlers/messageHandler");
+const { registerScheduler } = require("./scheduler");
 
 function isAuthorized(msg) {
   const userId = msg.from && msg.from.id;
@@ -62,6 +63,7 @@ async function bootstrap() {
 
   registerCommandHandlers(bot);
   registerMessageHandler(bot);
+  registerScheduler(bot);
 
   console.log("Bot started with polling mode.");
 }

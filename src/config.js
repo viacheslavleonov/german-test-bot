@@ -16,6 +16,8 @@ const ALLOWED_TELEGRAM_USERS = (process.env.ALLOWED_TELEGRAM_USERS || "")
   .map((item) => Number(item))
   .filter((item) => Number.isInteger(item));
 
+const REMINDER_TIME = process.env.REMINDER_TIME || "0 20 * * *";
+
 if (!TELEGRAM_BOT_TOKEN) {
   throw new Error("TELEGRAM_BOT_TOKEN is required in .env");
 }
@@ -27,4 +29,5 @@ module.exports = {
   TEST_QUESTION_COUNT,
   DB_PATH,
   ALLOWED_TELEGRAM_USERS,
+  REMINDER_TIME,
 };
