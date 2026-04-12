@@ -87,6 +87,21 @@ function formatHintMessage(level, hintText) {
   ].join("\n");
 }
 
+function buildHintReplyMarkup(questionId, level) {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "🔄 Перегенерировать (GPT-5.4)",
+            callback_data: `regen:${questionId}:${level}`,
+          },
+        ],
+      ],
+    },
+  };
+}
+
 function formatRevealAnswerMessage(correctOptionNumber, correctAnswerText) {
   return [
     DIVIDER,
@@ -157,6 +172,7 @@ module.exports = {
   formatQuestion,
   formatAnswerFeedback,
   formatHintMessage,
+  buildHintReplyMarkup,
   formatRevealAnswerMessage,
   formatSessionMessage,
   formatTestResult,

@@ -8,6 +8,7 @@ const promptPath = path.join(__dirname, "..", "..", "llm-prompt.md");
 const SYSTEM_PROMPT = fs.existsSync(promptPath)
   ? fs.readFileSync(promptPath, "utf8")
   : "Ты помощник для подготовки к тесту на гражданство Германии. Отвечай только на русском языке.";
+const REGENERATE_MODEL = "gpt-5.4";
 
 const client = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
@@ -24,13 +25,13 @@ function buildContextBlock(question, mode) {
   ].join("\n");
 }
 
-async function requestModel(messages, maxOutputTokens = 300) {
+async function requestModel(messages, maxOutputTokens = 300, modelName = OPENAI_MODEL) {
   if (!client) {
     throw new Error("OPENAI_API_KEY не задан. Добавь ключ в .env");
   }
 
   const response = await client.responses.create({
-    model: OPENAI_MODEL,
+    model: modelName,
     input: messages,
     max_output_tokens: maxOutputTokens,
   });
@@ -90,7 +91,8 @@ async function getHint(question, mode = "learning", hintLevel = 1) {
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
-    320
+    320,
+    OPENAI_MODEL
   );
 
   await run(
@@ -103,6 +105,39 @@ async function getHint(question, mode = "learning", hintLevel = 1) {
         generated_at = CURRENT_TIMESTAMP
     `,
     [question.id, normalizedLevel, hint.trim(), OPENAI_MODEL]
+  );
+
+  return hint.trim();
+}
+
+async function regenerateHint(question, mode = "learning", hintLevel = 1) {
+  const normalizedLevel = Math.min(Math.max(Number(hintLevel) || 1, 1), 3);
+
+  const userPrompt = [
+    buildHintInstructionByLevel(normalizedLevel),
+    "",
+    buildContextBlock(question, mode),
+  ].join("\n");
+
+  const hint = await requestModel(
+    [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userPrompt },
+    ],
+    320,
+    REGENERATE_MODEL
+  );
+
+  await run(
+    `
+      INSERT INTO hint_cache_levels (question_id, hint_level, hint_text, model)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(question_id, hint_level) DO UPDATE SET
+        hint_text = excluded.hint_text,
+        model = excluded.model,
+        generated_at = CURRENT_TIMESTAMP
+    `,
+    [question.id, normalizedLevel, hint.trim(), REGENERATE_MODEL]
   );
 
   return hint.trim();
@@ -133,5 +168,6 @@ async function answerFreeform(userText, question, mode) {
 
 module.exports = {
   getHint,
+  regenerateHint,
   answerFreeform,
 };

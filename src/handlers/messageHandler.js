@@ -7,11 +7,12 @@ const {
   trackHintUsage,
   revealCurrentAnswer,
 } = require("../services/quizService");
-const { answerFreeform } = require("../services/llmService");
+const { answerFreeform, regenerateHint } = require("../services/llmService");
 const {
   formatQuestion,
   formatAnswerFeedback,
   formatHintMessage,
+  buildHintReplyMarkup,
   formatRevealAnswerMessage,
   formatSessionMessage,
   formatTestResult,
@@ -19,6 +20,7 @@ const {
 } = require("../utils/messages");
 const { getHint } = require("../services/llmService");
 const { getImagePathForQuestion } = require("../utils/images");
+const { getQuestionById } = require("../services/questionService");
 
 const ANSWER_REGEX = /^[1-4]$/;
 
@@ -101,11 +103,55 @@ function registerMessageHandler(bot) {
           text: `Подсказка ${hintState.hintLevel}/3`,
         });
         const hint = await getHint(hintState.question, session.mode, hintState.hintLevel);
-        await bot.sendMessage(chatId, formatHintMessage(hintState.hintLevel, hint));
+        await bot.sendMessage(
+          chatId,
+          formatHintMessage(hintState.hintLevel, hint),
+          buildHintReplyMarkup(hintState.question.id, hintState.hintLevel)
+        );
       } catch (error) {
         await bot.answerCallbackQuery(query.id, { text: "Ошибка подсказки" });
         await bot.sendMessage(chatId, "Не удалось получить подсказку от ИИ. Попробуй чуть позже.");
       }
+      return;
+    }
+
+    const regenMatch = /^regen:(\d+):(\d+)$/.exec(query.data || "");
+    if (regenMatch) {
+      if (session.mode !== "learning") {
+        await bot.answerCallbackQuery(query.id, { text: "Только в режиме /learn" });
+        return;
+      }
+
+      const questionId = Number(regenMatch[1]);
+      const level = Number(regenMatch[2]);
+
+      const currentQuestion = await getCurrentQuestionForSession(session);
+      if (!currentQuestion || currentQuestion.id !== questionId) {
+        await bot.answerCallbackQuery(query.id, {
+          text: "Эта подсказка уже неактуальна для текущего вопроса",
+        });
+        return;
+      }
+
+      await bot.answerCallbackQuery(query.id, { text: "Перегенерирую через GPT-5.4..." });
+
+      try {
+        const dbQuestion = await getQuestionById(questionId);
+        if (!dbQuestion) {
+          await bot.sendMessage(chatId, "Не удалось загрузить вопрос для регенерации подсказки.");
+          return;
+        }
+
+        const regenerated = await regenerateHint(dbQuestion, session.mode, level);
+        await bot.sendMessage(
+          chatId,
+          formatHintMessage(level, regenerated),
+          buildHintReplyMarkup(questionId, level)
+        );
+      } catch (error) {
+        await bot.sendMessage(chatId, "Не удалось перегенерировать подсказку. Попробуй еще раз.");
+      }
+
       return;
     }
 

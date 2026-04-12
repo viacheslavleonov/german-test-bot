@@ -15,6 +15,7 @@ const {
   formatQuestion,
   formatStats,
   formatHintMessage,
+  buildHintReplyMarkup,
   formatSessionMessage,
   buildQuestionReplyMarkup,
 } = require("../utils/messages");
@@ -125,7 +126,11 @@ function registerCommandHandlers(bot) {
       }
 
       const hint = await getHint(hintState.question, session.mode, hintState.hintLevel);
-      await bot.sendMessage(msg.chat.id, formatHintMessage(hintState.hintLevel, hint));
+      await bot.sendMessage(
+        msg.chat.id,
+        formatHintMessage(hintState.hintLevel, hint),
+        buildHintReplyMarkup(hintState.question.id, hintState.hintLevel)
+      );
     } catch (error) {
       await bot.sendMessage(msg.chat.id, "Не удалось получить подсказку от ИИ. Попробуй чуть позже.");
     }
