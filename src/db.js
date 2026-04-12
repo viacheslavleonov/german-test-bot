@@ -160,6 +160,13 @@ async function initDb() {
 
   await run("CREATE INDEX IF NOT EXISTS idx_questions_number ON questions(question_number)");
   await run("CREATE INDEX IF NOT EXISTS idx_sessions_user_status ON user_sessions(user_id, status)");
+
+  // Migrations for columns added after initial schema
+  try {
+    await run("ALTER TABLE user_question_progress ADD COLUMN last_correct_at TEXT");
+  } catch (_) {
+    // Column already exists
+  }
 }
 
 module.exports = {

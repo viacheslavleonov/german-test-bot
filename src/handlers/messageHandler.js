@@ -6,6 +6,7 @@ const {
   getSessionQuestionCount,
   trackHintUsage,
   revealCurrentAnswer,
+  startFilteredSession,
 } = require("../services/quizService");
 const { answerFreeform, regenerateHint } = require("../services/llmService");
 const {
@@ -77,6 +78,35 @@ function registerMessageHandler(bot) {
     }
 
     await ensureUser(query.from);
+
+    // Handle review filter selection — no active session required
+    if (query.data && query.data.startsWith("review_filter:")) {
+      const filter = query.data.replace("review_filter:", "");
+      await bot.answerCallbackQuery(query.id);
+
+      try {
+        const startResult = await startFilteredSession(userId, filter);
+        if (startResult.isEmpty) {
+          const labels = {
+            wrong: "неверных ответов",
+            hint1: "вопросов с подсказкой ур.1",
+            hint2: "вопросов с подсказкой ур.2",
+            hint3: "вопросов с подсказкой ур.3",
+          };
+          const label = labels[filter] || "вопросов";
+          await bot.sendMessage(chatId, `ℹ️ Нет ${label} в истории. Начни с /learn.`);
+          return;
+        }
+
+        const question = await getCurrentQuestionForSession(startResult.session);
+        await bot.sendMessage(chatId, formatSessionMessage("learningStarted"));
+        await sendNextQuestion(bot, chatId, startResult.session, question);
+      } catch (error) {
+        await bot.sendMessage(chatId, "Не удалось запустить сессию. Попробуй ещё раз.");
+      }
+      return;
+    }
+
     const session = await getActiveSession(userId);
 
     if (!session) {

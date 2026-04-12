@@ -18,6 +18,8 @@ const {
   buildHintReplyMarkup,
   formatSessionMessage,
   buildQuestionReplyMarkup,
+  formatReviewMenu,
+  buildReviewMenuMarkup,
 } = require("../utils/messages");
 const { getImagePathForQuestion } = require("../utils/images");
 
@@ -102,6 +104,18 @@ function registerCommandHandlers(bot) {
     } else {
       await bot.sendMessage(msg.chat.id, formatSessionMessage("noActive"));
     }
+  });
+
+  bot.onText(/^\/review$/, async (msg) => {
+    await ensureUser(msg.from);
+
+    const questionsOk = await hasAnyQuestions();
+    if (!questionsOk) {
+      await bot.sendMessage(msg.chat.id, "База вопросов пустая. Сначала выполни миграцию.");
+      return;
+    }
+
+    await bot.sendMessage(msg.chat.id, formatReviewMenu(), buildReviewMenuMarkup());
   });
 
   bot.onText(/^\/hint$/, async (msg) => {

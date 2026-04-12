@@ -51,10 +51,11 @@ async function bootstrap() {
 
   await bot.setMyCommands([
     { command: "start", description: "🇩🇪 Начать работу с ботом" },
-    { command: "learn", description: "📘 Режим обучения" },
+    { command: "learn", description: "📘 Режим обучения (все вопросы)" },
+    { command: "review", description: "🔁 Повторить сложные вопросы" },
     { command: "test", description: "🧪 Пробный тест (30 вопросов)" },
     { command: "stats", description: "📊 Моя статистика" },
-    { command: "hint", description: "💡 Подсказка (в /learn)" },
+    { command: "hint", description: "💡 Подсказка (в /learn и /review)" },
     { command: "cancel", description: "🛑 Завершить сессию" },
     { command: "help", description: "❓ Справка" },
   ]);

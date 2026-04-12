@@ -6,7 +6,8 @@ function introMessage() {
     "",
     DIVIDER,
     "📌 Команды:",
-    "• /learn — режим обучения",
+    "• /learn — режим обучения (все вопросы)",
+    "• /review — повторить сложные вопросы (неверные / с подсказками)",
     "• /test — пробный тест (30 случайных вопросов)",
     "• /stats — статистика подготовки",
     "• /hint — подсказка к текущему вопросу (только в /learn)",
@@ -167,6 +168,30 @@ function formatStats(stats) {
   return lines.join("\n");
 }
 
+function formatReviewMenu() {
+  return [
+    DIVIDER,
+    "🔁 Режим повторения",
+    "",
+    "Выбери какие вопросы хочешь повторить:",
+    DIVIDER,
+  ].join("\n");
+}
+
+function buildReviewMenuMarkup() {
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "❌ Неверные ответы", callback_data: "review_filter:wrong" }],
+        [{ text: "💡 Использовал подсказку (ур.1+)", callback_data: "review_filter:hint1" }],
+        [{ text: "💡💡 Использовал 2+ подсказки (ур.2+)", callback_data: "review_filter:hint2" }],
+        [{ text: "💡💡💡 Использовал 3 подсказки", callback_data: "review_filter:hint3" }],
+        [{ text: "📚 Все вопросы", callback_data: "review_filter:all" }],
+      ],
+    },
+  };
+}
+
 module.exports = {
   introMessage,
   formatQuestion,
@@ -177,5 +202,7 @@ module.exports = {
   formatSessionMessage,
   formatTestResult,
   formatStats,
+  formatReviewMenu,
+  buildReviewMenuMarkup,
   buildQuestionReplyMarkup,
 };

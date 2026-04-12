@@ -30,9 +30,13 @@ async function requestModel(messages, maxOutputTokens = 300, modelName = OPENAI_
     throw new Error("OPENAI_API_KEY не задан. Добавь ключ в .env");
   }
 
+  const systemMsg = messages.find((m) => m.role === "system");
+  const inputMessages = messages.filter((m) => m.role !== "system");
+
   const response = await client.responses.create({
     model: modelName,
-    input: messages,
+    instructions: systemMsg ? systemMsg.content : undefined,
+    input: inputMessages.length === 1 ? inputMessages[0].content : inputMessages,
     max_output_tokens: maxOutputTokens,
   });
 

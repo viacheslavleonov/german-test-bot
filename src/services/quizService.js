@@ -9,6 +9,7 @@ const {
   resolveCorrectOptionIndex,
   countQuestions,
   getRandomQuestions,
+  getQuestionIdsByFilter,
 } = require("./questionService");
 
 async function ensureUser(telegramUser) {
@@ -260,6 +261,13 @@ async function answerCurrentQuestion(userId, answerNumber) {
     [userId, question.id, isCorrect ? 1 : 0]
   );
 
+  if (isCorrect) {
+    await run(
+      `UPDATE user_question_progress SET last_correct_at = CURRENT_TIMESTAMP WHERE user_id = ? AND question_id = ?`,
+      [userId, question.id]
+    );
+  }
+
   await run(
     `
       UPDATE users
@@ -354,6 +362,28 @@ async function revealCurrentAnswer(userId) {
   };
 }
 
+async function startFilteredSession(userId, filter) {
+  // Cancel any active session first
+  await cancelSession(userId);
+
+  const questionIds = await getQuestionIdsByFilter(userId, filter);
+
+  if (questionIds.length === 0) {
+    return { isEmpty: true, session: null };
+  }
+
+  const result = await run(
+    `
+      INSERT INTO user_sessions (user_id, mode, question_ids, current_index, last_question_started_at)
+      VALUES (?, 'learning', ?, 0, CURRENT_TIMESTAMP)
+    `,
+    [userId, JSON.stringify(questionIds)]
+  );
+
+  const session = await get("SELECT * FROM user_sessions WHERE id = ?", [result.lastID]);
+  return { isEmpty: false, session };
+}
+
 async function getStats(userId) {
   const base = await get(
     `
@@ -408,6 +438,7 @@ module.exports = {
   ensureUser,
   getActiveSession,
   startSession,
+  startFilteredSession,
   getCurrentQuestionForSession,
   cancelSession,
   trackHintUsage,
