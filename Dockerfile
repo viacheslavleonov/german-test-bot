@@ -2,9 +2,14 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
+# Build tools are required to compile native modules like sqlite3 for target CPU/GLIBC.
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends python3 make g++ \
+	&& rm -rf /var/lib/apt/lists/*
+
 # Install production dependencies first for better layer caching.
 COPY package.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+RUN npm_config_build_from_source=true npm install --omit=dev --no-audit --no-fund
 
 # Copy application code.
 COPY src ./src
