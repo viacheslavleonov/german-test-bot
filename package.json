@@ -1,0 +1,20 @@
+{
+  "name": "germantestbot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "migrate": "node scripts/migrate-questions.js",
+    "test": "echo \"No tests configured yet\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "node-telegram-bot-api": "^0.67.0",
+    "openai": "^6.34.0",
+    "sqlite3": "^6.0.1"
+  }
+}
