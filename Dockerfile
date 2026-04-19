@@ -1,13 +1,7 @@
-FROM node:20-trixie-slim
+FROM node:22-slim
 
 WORKDIR /app
 
-# Build tools are required for native modules fallback builds on ARM.
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends python3 make g++ \
-	&& rm -rf /var/lib/apt/lists/*
-
-# Install production dependencies first for better layer caching.
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund \
 	&& node -e "require('sqlite3'); console.log('sqlite3 load ok')"
