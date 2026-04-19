@@ -167,6 +167,12 @@ async function initDb() {
   } catch (_) {
     // Column already exists
   }
+
+  try {
+    await run("ALTER TABLE users ADD COLUMN reminder_time TEXT");
+  } catch (_) {
+    // Column already exists
+  }
 }
 
 module.exports = {

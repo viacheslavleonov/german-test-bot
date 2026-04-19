@@ -57,6 +57,7 @@ async function bootstrap() {
     { command: "test", description: "🧪 Пробный тест (30 вопросов)" },
     { command: "stats", description: "📊 Моя статистика" },
     { command: "hint", description: "💡 Подсказка (в /learn и /review)" },
+    { command: "remind", description: "⏰ Напоминание (напр. /remind 20:00)" },
     { command: "cancel", description: "🛑 Завершить сессию" },
     { command: "help", description: "❓ Справка" },
   ]);

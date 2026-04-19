@@ -22,6 +22,7 @@ const {
   buildReviewMenuMarkup,
 } = require("../utils/messages");
 const { getImagePathForQuestion } = require("../utils/images");
+const { run, get } = require("../db");
 
 async function sendCurrentQuestion(bot, chatId, session) {
   const question = await getCurrentQuestionForSession(session);
@@ -148,6 +149,45 @@ function registerCommandHandlers(bot) {
     } catch (error) {
       await bot.sendMessage(msg.chat.id, "Не удалось получить подсказку от ИИ. Попробуй чуть позже.");
     }
+  });
+  bot.onText(/^\/remind(?:\s+(.+))?$/, async (msg, match) => {
+    await ensureUser(msg.from);
+    const arg = (match[1] || "").trim();
+
+    if (!arg) {
+      const user = await get("SELECT reminder_time FROM users WHERE user_id = ?", [msg.from.id]);
+      const current = user && user.reminder_time;
+      await bot.sendMessage(
+        msg.chat.id,
+        current
+          ? `⏰ Напоминание установлено на ${current}.\nЧтобы изменить: /remind 20:00\nЧтобы отключить: /remind off`
+          : "⏰ Напоминание не установлено.\nЧтобы включить: /remind 20:00"
+      );
+      return;
+    }
+
+    if (arg === "off" || arg === "выкл") {
+      await run("UPDATE users SET reminder_time = NULL WHERE user_id = ?", [msg.from.id]);
+      await bot.sendMessage(msg.chat.id, "🔕 Напоминание отключено.");
+      return;
+    }
+
+    const timeMatch = /^(\d{1,2}):(\d{2})$/.exec(arg);
+    if (!timeMatch) {
+      await bot.sendMessage(msg.chat.id, "Формат: /remind 20:00 или /remind off");
+      return;
+    }
+
+    const hours = Number(timeMatch[1]);
+    const minutes = Number(timeMatch[2]);
+    if (hours > 23 || minutes > 59) {
+      await bot.sendMessage(msg.chat.id, "Некорректное время. Пример: /remind 20:00");
+      return;
+    }
+
+    const timeStr = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    await run("UPDATE users SET reminder_time = ? WHERE user_id = ?", [timeStr, msg.from.id]);
+    await bot.sendMessage(msg.chat.id, `⏰ Напоминание установлено на ${timeStr} каждый день.`);
   });
 }
 
