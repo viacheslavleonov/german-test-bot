@@ -32,16 +32,18 @@ async function sendCurrentQuestion(bot, chatId, session) {
   }
 
   const imagePath = getImagePathForQuestion(question.question_number);
+  const total = await getSessionQuestionCount(session);
+  const questionText = formatQuestion(question, session.mode, session.current_index, total);
+
   if (imagePath) {
-    await bot.sendPhoto(chatId, imagePath);
+    await bot.sendPhoto(chatId, imagePath, {
+      caption: questionText,
+      ...buildQuestionReplyMarkup(session.mode),
+    });
+    return;
   }
 
-  const total = await getSessionQuestionCount(session);
-  await bot.sendMessage(
-    chatId,
-    formatQuestion(question, session.mode, session.current_index, total),
-    buildQuestionReplyMarkup(session.mode)
-  );
+  await bot.sendMessage(chatId, questionText, buildQuestionReplyMarkup(session.mode));
 }
 
 function registerCommandHandlers(bot) {
