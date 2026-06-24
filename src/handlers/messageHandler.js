@@ -34,12 +34,12 @@ async function sendNextQuestion(bot, chatId, session, question) {
   if (imagePath) {
     await bot.sendPhoto(chatId, imagePath, {
       caption: questionText,
-      ...buildQuestionReplyMarkup(session.mode),
+      ...buildQuestionReplyMarkup(session.mode, question.id),
     });
     return;
   }
 
-  await bot.sendMessage(chatId, questionText, buildQuestionReplyMarkup(session.mode));
+  await bot.sendMessage(chatId, questionText, buildQuestionReplyMarkup(session.mode, question.id));
 }
 
 async function processAnswer(bot, userId, chatId, answerNumber) {

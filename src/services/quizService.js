@@ -106,15 +106,23 @@ async function cancelSession(userId) {
   return true;
 }
 
-async function trackHintUsage(userId) {
+async function trackHintUsage(userId, questionId = null) {
   const session = await getActiveSession(userId);
   if (!session) {
     throw new Error("Нет активной сессии. Используй /learn или /test.");
   }
 
-  const question = await getCurrentQuestionForSession(session);
-  if (!question) {
-    throw new Error("Не удалось загрузить текущий вопрос.");
+  let question;
+  if (questionId) {
+    question = await getQuestionById(questionId);
+    if (!question) {
+      throw new Error("Вопрос не найден.");
+    }
+  } else {
+    question = await getCurrentQuestionForSession(session);
+    if (!question) {
+      throw new Error("Не удалось загрузить текущий вопрос.");
+    }
   }
 
   await run(
@@ -173,15 +181,23 @@ async function trackHintUsage(userId) {
   };
 }
 
-async function trackFullHintUsage(userId) {
+async function trackFullHintUsage(userId, questionId = null) {
   const session = await getActiveSession(userId);
   if (!session) {
     throw new Error("Нет активной сессии. Используй /learn или /test.");
   }
 
-  const question = await getCurrentQuestionForSession(session);
-  if (!question) {
-    throw new Error("Не удалось загрузить текущий вопрос.");
+  let question;
+  if (questionId) {
+    question = await getQuestionById(questionId);
+    if (!question) {
+      throw new Error("Вопрос не найден.");
+    }
+  } else {
+    question = await getCurrentQuestionForSession(session);
+    if (!question) {
+      throw new Error("Не удалось загрузить текущий вопрос.");
+    }
   }
 
   await run(

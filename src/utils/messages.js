@@ -44,7 +44,7 @@ function formatQuestion(question, mode, currentIndex, totalQuestions) {
   ].join("\n");
 }
 
-function buildQuestionReplyMarkup(mode) {
+function buildQuestionReplyMarkup(mode, questionId) {
   const keyboard = [
     [
       { text: "1", callback_data: "answer:1" },
@@ -54,11 +54,11 @@ function buildQuestionReplyMarkup(mode) {
     ],
   ];
 
-  if (mode === "learning") {
+  if (mode === "learning" && questionId) {
     keyboard.push([
-      { text: "Подсказка", callback_data: "hint" },
-      { text: "Показать ответ", callback_data: "show_answer" },
-      { text: "Перевести", callback_data: "translate" },
+      { text: "Подсказка", callback_data: `hint:${questionId}` },
+      { text: "Показать ответ", callback_data: `show_answer:${questionId}` },
+      { text: "Перевести", callback_data: `translate:${questionId}` },
     ]);
   }
 

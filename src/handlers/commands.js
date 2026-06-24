@@ -38,12 +38,12 @@ async function sendCurrentQuestion(bot, chatId, session) {
   if (imagePath) {
     await bot.sendPhoto(chatId, imagePath, {
       caption: questionText,
-      ...buildQuestionReplyMarkup(session.mode),
+      ...buildQuestionReplyMarkup(session.mode, question.id),
     });
     return;
   }
 
-  await bot.sendMessage(chatId, questionText, buildQuestionReplyMarkup(session.mode));
+  await bot.sendMessage(chatId, questionText, buildQuestionReplyMarkup(session.mode, question.id));
 }
 
 function registerCommandHandlers(bot) {
