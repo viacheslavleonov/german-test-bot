@@ -22,7 +22,7 @@ const {
 } = require("../utils/messages");
 const { getHint } = require("../services/llmService");
 const { getImagePathForQuestion } = require("../utils/images");
-const { getQuestionById } = require("../services/questionService");
+const { getQuestionById, resolveCorrectOptionIndex } = require("../services/questionService");
 
 const ANSWER_REGEX = /^[1-4]$/;
 
@@ -214,27 +214,47 @@ function registerMessageHandler(bot) {
       return;
     }
 
-    if (query.data === "show_answer") {
+    const showAnswerMatch = /^show_answer:(\d+)$/.exec(query.data || "");
+    if (showAnswerMatch) {
       if (session.mode !== "learning") {
         await bot.answerCallbackQuery(query.id, { text: "Только в режиме /learn" });
         return;
       }
 
-      await bot.answerCallbackQuery(query.id);
-      const reveal = await revealCurrentAnswer(userId);
-      await bot.sendMessage(
-        chatId,
-        formatRevealAnswerMessage(reveal.correctIndex + 1, reveal.correctAnswer)
-      );
-
-      if (reveal.completed) {
-        await bot.sendMessage(chatId, formatSessionMessage("learningCompleted"));
+      const questionId = Number(showAnswerMatch[1]);
+      const question = await getQuestionById(questionId);
+      if (!question) {
+        await bot.answerCallbackQuery(query.id, { text: "Вопрос не найден" });
         return;
       }
 
-      const refreshedSession = await getActiveSession(userId);
-      const nextQuestion = await getCurrentQuestionForSession(refreshedSession);
-      await sendNextQuestion(bot, chatId, refreshedSession, nextQuestion);
+      await bot.answerCallbackQuery(query.id);
+      
+      // If showing answer for the current question, skip it and go to next
+      const currentQuestion = await getCurrentQuestionForSession(session);
+      if (currentQuestion && currentQuestion.id === questionId) {
+        const reveal = await revealCurrentAnswer(userId);
+        await bot.sendMessage(
+          chatId,
+          formatRevealAnswerMessage(reveal.correctIndex + 1, reveal.correctAnswer)
+        );
+
+        if (reveal.completed) {
+          await bot.sendMessage(chatId, formatSessionMessage("learningCompleted"));
+          return;
+        }
+
+        const refreshedSession = await getActiveSession(userId);
+        const nextQuestion = await getCurrentQuestionForSession(refreshedSession);
+        await sendNextQuestion(bot, chatId, refreshedSession, nextQuestion);
+      } else {
+        // Showing answer for previous question, just display it
+        const correctIndex = resolveCorrectOptionIndex(question);
+        await bot.sendMessage(
+          chatId,
+          formatRevealAnswerMessage(correctIndex + 1, question.correct_answer)
+        );
+      }
       return;
     }
 
