@@ -5,6 +5,7 @@ const {
   answerCurrentQuestion,
   getSessionQuestionCount,
   trackHintUsage,
+  trackFullHintUsage,
   revealCurrentAnswer,
   startFilteredSession,
 } = require("../services/quizService");
@@ -143,6 +144,28 @@ function registerMessageHandler(bot) {
       } catch (error) {
         await bot.answerCallbackQuery(query.id, { text: "Ошибка подсказки" });
         await bot.sendMessage(chatId, "Не удалось получить подсказку от ИИ. Попробуй чуть позже.");
+      }
+      return;
+    }
+
+    if (query.data === "translate") {
+      if (session.mode !== "learning") {
+        await bot.answerCallbackQuery(query.id, { text: "Перевод только в /learn" });
+        return;
+      }
+
+      try {
+        const hintState = await trackFullHintUsage(userId);
+        await bot.answerCallbackQuery(query.id, { text: "Перевожу (полная подсказка)..." });
+        const translation = await require("../services/llmService").getTranslation(hintState.question, session.mode);
+        await bot.sendMessage(
+          chatId,
+          formatHintMessage(3, translation),
+          buildHintReplyMarkup(hintState.question.id, 3)
+        );
+      } catch (error) {
+        await bot.answerCallbackQuery(query.id, { text: "Ошибка перевода" });
+        await bot.sendMessage(chatId, "Не удалось получить перевод от ИИ. Попробуй чуть позже.");
       }
       return;
     }

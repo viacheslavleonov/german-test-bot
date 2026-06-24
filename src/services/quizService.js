@@ -173,6 +173,60 @@ async function trackHintUsage(userId) {
   };
 }
 
+async function trackFullHintUsage(userId) {
+  const session = await getActiveSession(userId);
+  if (!session) {
+    throw new Error("Нет активной сессии. Используй /learn или /test.");
+  }
+
+  const question = await getCurrentQuestionForSession(session);
+  if (!question) {
+    throw new Error("Не удалось загрузить текущий вопрос.");
+  }
+
+  await run(
+    `
+      INSERT INTO session_question_hints (session_id, question_id, hints_used)
+      VALUES (?, ?, 3)
+      ON CONFLICT(session_id, question_id) DO UPDATE SET
+        hints_used = CASE WHEN hints_used < 3 THEN 3 ELSE hints_used END
+    `,
+    [session.id, question.id]
+  );
+
+  await run(
+    `
+      INSERT INTO user_question_progress (user_id, question_id, times_hint_used, last_attempted_at)
+      VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+      ON CONFLICT(user_id, question_id) DO UPDATE SET
+        times_hint_used = times_hint_used + 1,
+        last_attempted_at = CURRENT_TIMESTAMP
+    `,
+    [userId, question.id]
+  );
+
+  await run(
+    `
+      UPDATE users
+      SET total_hints_used = total_hints_used + 1,
+          last_activity_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+    `,
+    [userId]
+  );
+
+  await run(
+    `
+      UPDATE user_sessions
+      SET hints_used = hints_used + 1
+      WHERE user_id = ? AND status = 'active'
+    `,
+    [userId]
+  );
+
+  return { session, question, hintLevel: 3 };
+}
+
 async function getSecondsSpentForSession(sessionId) {
   const timeRow = await get(
     `
@@ -442,6 +496,7 @@ module.exports = {
   getCurrentQuestionForSession,
   cancelSession,
   trackHintUsage,
+  trackFullHintUsage,
   answerCurrentQuestion,
   revealCurrentAnswer,
   getStats,

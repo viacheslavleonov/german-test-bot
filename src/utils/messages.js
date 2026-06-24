@@ -57,6 +57,7 @@ function buildQuestionReplyMarkup(mode) {
     keyboard.push([
       { text: "Подсказка", callback_data: "hint" },
       { text: "Показать ответ", callback_data: "show_answer" },
+      { text: "Перевести", callback_data: "translate" },
     ]);
   }
 

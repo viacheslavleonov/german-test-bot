@@ -178,4 +178,8 @@ module.exports = {
   getHint,
   regenerateHint,
   answerFreeform,
+  async getTranslation(question, mode = "learning") {
+    // Use existing hint caching for level 3 (full translation)
+    return getHint(question, mode, 3);
+  },
 };
