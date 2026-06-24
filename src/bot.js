@@ -53,6 +53,7 @@ async function bootstrap() {
   await bot.setMyCommands([
     { command: "start", description: "🇩🇪 Начать работу с ботом" },
     { command: "learn", description: "📘 Режим обучения (все вопросы)" },
+    { command: "learnall", description: "📘 Режим обучения (все вопросы в случайном порядке)" },
     { command: "review", description: "🔁 Повторить сложные вопросы" },
     { command: "test", description: "🧪 Пробный тест (30 вопросов)" },
     { command: "stats", description: "📊 Моя статистика" },
