@@ -117,14 +117,16 @@ function registerMessageHandler(bot) {
       return;
     }
 
-    if (query.data === "hint") {
+    const hintMatch = /^hint:(\d+)$/.exec(query.data || "");
+    if (hintMatch) {
       if (session.mode !== "learning") {
         await bot.answerCallbackQuery(query.id, { text: "Подсказка только в /learn" });
         return;
       }
 
+      const questionId = Number(hintMatch[1]);
       try {
-        const hintState = await trackHintUsage(userId);
+        const hintState = await trackHintUsage(userId, questionId);
         if (hintState.hintLevel > 3) {
           await bot.answerCallbackQuery(query.id, {
             text: "Максимум подсказок. Нажми 'Показать ответ'.",
@@ -148,14 +150,16 @@ function registerMessageHandler(bot) {
       return;
     }
 
-    if (query.data === "translate") {
+    const translateMatch = /^translate:(\d+)$/.exec(query.data || "");
+    if (translateMatch) {
       if (session.mode !== "learning") {
         await bot.answerCallbackQuery(query.id, { text: "Перевод только в /learn" });
         return;
       }
 
+      const questionId = Number(translateMatch[1]);
       try {
-        const hintState = await trackFullHintUsage(userId);
+        const hintState = await trackFullHintUsage(userId, questionId);
         await bot.answerCallbackQuery(query.id, { text: "Перевожу (полная подсказка)..." });
         const translation = await require("../services/llmService").getTranslation(hintState.question, session.mode);
         await bot.sendMessage(
