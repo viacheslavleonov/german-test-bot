@@ -75,6 +75,24 @@ function registerCommandHandlers(bot) {
     await sendCurrentQuestion(bot, msg.chat.id, session);
   });
 
+  // Start a fresh learning session with all questions in random order
+  bot.onText(/^\/learnall$/, async (msg) => {
+    await ensureUser(msg.from);
+
+    const questionsOk = await hasAnyQuestions();
+    if (!questionsOk) {
+      await bot.sendMessage(msg.chat.id, "База вопросов пустая. Сначала выполни миграцию.");
+      return;
+    }
+
+    // Cancel any existing session so we always create a new randomized session
+    await cancelSession(msg.from.id);
+
+    const { session } = await startSession(msg.from.id, "learning");
+    await bot.sendMessage(msg.chat.id, formatSessionMessage("learningStarted"));
+    await sendCurrentQuestion(bot, msg.chat.id, session);
+  });
+
   bot.onText(/^\/test$/, async (msg) => {
     await ensureUser(msg.from);
 
